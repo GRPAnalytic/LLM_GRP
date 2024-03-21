@@ -25,7 +25,7 @@ odbc_str = 'mssql+pyodbc:///?odbc_connect=' \
 db_engine = create_engine(odbc_str)
 
 # include_tables=['Fact_SalesOrderItem','Dim_Product']
-include_tables=['Dim_Currency']
+include_tables=['Fact_Sales']
 
 db = SQLDatabase(db_engine, include_tables=include_tables)
 
@@ -34,7 +34,7 @@ default_context = ChatPromptTemplate.from_messages(
     [
         ("system",
             """
-            You are a helpful AI assistant expert in identifying the relevant topic from user's question about Dim_Currency and then querying SQL Database to find answer.
+            You are a helpful AI assistant expert in identifying the relevant topic from user's question about Fact_Sales and then querying SQL Database to find answer.
             """
         ),
         ("user", "{question}\n ai: "),
@@ -47,7 +47,8 @@ sqldb_agent = create_sql_agent(
     llm=llm,
     toolkit=sql_toolkit,
     agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-    verbose=True
+    verbose=True,
+    return_intermediate_steps=True,
 )
 
 class AnswerRequest(BaseModel):
