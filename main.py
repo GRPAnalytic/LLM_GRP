@@ -21,9 +21,8 @@ odbc_str = 'mssql+pyodbc:///?odbc_connect=' \
                 ';Uid=' + os.getenv("SQL_USERNAME")+ \
                 ';Pwd=' + os.getenv("SQL_PWD") + \
                 ';Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
-
 db_engine = create_engine(odbc_str)
-
+print("Connection String:",odbc_str)
 # include_tables=['Fact_SalesOrderItem','Dim_Product']
 include_tables=['Fact_Sales']
 
@@ -48,7 +47,7 @@ sqldb_agent = create_sql_agent(
     toolkit=sql_toolkit,
     agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     verbose=True,
-    return_intermediate_steps=True,
+    agent_executor_kwargs={"return_intermediate_steps": True}
 )
 
 class AnswerRequest(BaseModel):
@@ -59,16 +58,17 @@ class AnswerRequest(BaseModel):
 async def answer_question(request: AnswerRequest):
     """
     Get an answer to the provided question.
-
     Parameters:
     - request (AnswerRequest): The request body containing the question and optional context.
-
     Returns:
     - dict: A dictionary containing the answer.
     """
     context = request.context if request.context else default_context
-    response = sqldb_agent.run(context.format(question=request.question))
-    return {"answer": response}
+    response = sqldb_agent.invoke(context.format(question=request.question))
+    return {
+        "answer": response["output"],
+        "steps":response["intermediate_steps"]
+        }
 
 if __name__ == "__main__":
     import uvicorn
