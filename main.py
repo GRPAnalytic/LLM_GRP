@@ -22,23 +22,15 @@ odbc_str = 'mssql+pyodbc:///?odbc_connect=' \
                 ';Pwd=' + os.getenv("SQL_PWD") + \
                 ';Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
 db_engine = create_engine(odbc_str)
-print("Connection String:",odbc_str)
-# include_tables=['Fact_SalesOrderItem','Dim_Product']
+
 include_tables=['Fact_Sales']
 
 db = SQLDatabase(db_engine, include_tables=include_tables)
 
 llm = AzureChatOpenAI(model=os.getenv("OPENAI_CHAT_MODEL"),deployment_name=os.getenv("OPENAI_CHAT_MODEL"),temperature=0)
-default_context = ChatPromptTemplate.from_messages(
-    [
-        ("system",
-            """
-            You are a helpful AI assistant expert in identifying the relevant topic from user's question about Fact_Sales and then querying SQL Database to find answer.
-            """
-        ),
-        ("user", "{question}\n ai: "),
-    ]
-)
+default_context_text =  """
+                    You are a helpful AI assistant expert in identifying the relevant topic from user's question about Fact_Sales and then querying SQL Database to find answer.
+                """
 sql_toolkit = SQLDatabaseToolkit(db=db, llm=llm)
 sql_toolkit.get_tools()
 
@@ -63,7 +55,13 @@ async def answer_question(request: AnswerRequest):
     Returns:
     - dict: A dictionary containing the answer.
     """
-    context = request.context if request.context else default_context
+    context_text = request.context if request.context else default_context_text
+    context = ChatPromptTemplate.from_messages(
+        [
+            ("system",context_text),
+            ("user", "{question}\n ai: "),
+        ]
+    )
     response = sqldb_agent.invoke(context.format(question=request.question))
     return {
         "answer": response["output"],
