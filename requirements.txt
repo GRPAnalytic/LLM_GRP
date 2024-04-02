@@ -3,3 +3,7 @@ sqlalchemy
 fastapi
 pydantic
 python-dotenv
+pyodbc
+openai
+dotenv
+uvicorn
