@@ -69,6 +69,7 @@ async def answer_question(request: AnswerRequest):
         toolkit=sql_toolkit,
         agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
+        agent_executor_kwargs={"handle_parsing_errors": True}
     )
     
     context_text = request.context if request.context else default_context_text
